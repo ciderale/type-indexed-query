@@ -6,7 +6,7 @@ import org.jooq.DSLContext
 import org.jooq.Record
 import org.jooq.SelectJoinStep
 
-class DepPair<T> private constructor(
+class SelectMappingPair<T> private constructor(
     private val run: (Condition, DSLContext, ResultMode<*, *>) -> Any,
 ) {
     @Suppress("UNCHECKED_CAST")
@@ -20,8 +20,8 @@ class DepPair<T> private constructor(
         fun <X : Record, T> of(
             select: (DSLContext) -> SelectJoinStep<X>,
             mapper: (X) -> T,
-        ): DepPair<T> =
-            DepPair { cond, ctx, mode ->
+        ): SelectMappingPair<T> =
+            SelectMappingPair { cond, ctx, mode ->
                 val q = select(ctx).where(cond)
 
                 when (mode) {

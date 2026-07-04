@@ -1,7 +1,7 @@
 package io.github.ciderale.tiq.sample.db
 
-import io.github.ciderale.tiq.core.DepPair
 import io.github.ciderale.tiq.core.FetchSpec
+import io.github.ciderale.tiq.core.SelectMappingPair
 import io.github.ciderale.tiq.sample.UserRepository
 import io.github.ciderale.tiq.sample.domain.UserDetail
 import io.github.ciderale.tiq.sample.domain.UserSummary
@@ -17,7 +17,7 @@ class JooqUserRepository(
         spec: FetchSpec<T, R, UserRepository.UP<T>>,
     ): R {
         val cond = condition(query)
-        val pair: DepPair<T> = mappingPair(spec.projection)
+        val pair: SelectMappingPair<T> = mappingPair(spec.projection)
         return pair.fetch(spec.mode, cond, ctx)
     }
 
@@ -28,16 +28,16 @@ class JooqUserRepository(
         )
 }
 
-private fun <T> mappingPair(projection: UserRepository.UP<T>): DepPair<T> =
+private fun <T> mappingPair(projection: UserRepository.UP<T>): SelectMappingPair<T> =
     when (projection) {
         UserRepository.Summary -> {
-            DepPair.of(
+            SelectMappingPair.of(
                 { ctx -> ctx.select(USER.ID, USER.NAME).from(USER) },
             ) { UserSummary(it[USER.ID], it[USER.NAME]) as T }
         }
 
         UserRepository.Detail -> {
-            DepPair.of(
+            SelectMappingPair.of(
                 { ctx -> ctx.select(USER.ID, USER.NAME, USER.EMAIL).from(USER) },
             ) {
                 UserDetail(
