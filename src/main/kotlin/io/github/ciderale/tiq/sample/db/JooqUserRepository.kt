@@ -23,7 +23,8 @@ class JooqUserRepository(
 
     private fun condition(query: UserRepository.Query): Condition =
         DSL.and(
-            if (query.activeOnly) USER.ACTIVE?.isTrue else DSL.noCondition(),
+            query.id?.let(USER.ID::eq),
+            query.activeOnly?.let(USER.ACTIVE::eq),
         )
 }
 

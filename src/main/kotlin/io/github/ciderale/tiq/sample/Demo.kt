@@ -12,7 +12,8 @@ import io.github.ciderale.tiq.sample.domain.UserSummary
 
 interface UserRepository {
     data class Query(
-        val activeOnly: Boolean = false,
+        val id: String? = null,
+        val activeOnly: Boolean? = null,
     )
 
     // Projections belong to this Query scope
