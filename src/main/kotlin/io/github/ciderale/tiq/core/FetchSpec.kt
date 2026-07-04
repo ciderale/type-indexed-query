@@ -2,7 +2,7 @@ package io.github.ciderale.tiq.core
 
 import io.github.ciderale.tiq.sample.domain.PagedList
 
-data class FetchSpec<T, R, P : Projection<T>>(
+data class FetchSpec<T, R, out P : Projection<T>>(
     val projection: P,
     val mode: ResultMode<T, R>,
 )

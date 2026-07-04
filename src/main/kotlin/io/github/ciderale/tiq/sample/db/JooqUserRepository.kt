@@ -3,6 +3,7 @@ package io.github.ciderale.tiq.sample.db
 import io.github.ciderale.tiq.core.FetchSpec
 import io.github.ciderale.tiq.core.SelectMappingPair
 import io.github.ciderale.tiq.core.SelectMappingRegistry
+import io.github.ciderale.tiq.core.fetch
 import io.github.ciderale.tiq.sample.UserRepository
 import io.github.ciderale.tiq.sample.domain.UserDetail
 import io.github.ciderale.tiq.sample.domain.UserSummary
@@ -16,18 +17,14 @@ class JooqUserRepository(
     override fun <T, R> fetch(
         query: UserRepository.Query,
         spec: FetchSpec<T, R, UserRepository.UP<T>>,
-    ): R {
-        val cond = condition(query)
-        val pair: SelectMappingPair<T> = mappingPair(spec.projection)
-        return pair.fetch(spec.mode, cond, ctx)
-    }
-
-    private fun condition(query: UserRepository.Query): Condition =
-        DSL.and(
-            query.id?.let(USER.ID::eq),
-            query.activeOnly?.let(USER.ACTIVE::eq),
-        )
+    ): R = ctx.fetch(query.toCondition(), spec, registry)
 }
+
+fun UserRepository.Query.toCondition(): Condition =
+    DSL.and(
+        id?.let(USER.ID::eq),
+        activeOnly?.let(USER.ACTIVE::eq),
+    )
 
 val summaryMapping =
     SelectMappingPair.of(
@@ -46,5 +43,3 @@ val registry =
         UserRepository.Summary put summaryMapping
         UserRepository.Detail put detailMapping
     }
-
-private fun <T> mappingPair(projection: UserRepository.UP<T>): SelectMappingPair<T> = registry[projection]
