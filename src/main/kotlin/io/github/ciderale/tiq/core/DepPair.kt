@@ -18,11 +18,11 @@ class DepPair<T> private constructor(
 
     companion object {
         fun <X : Record, T> of(
-            select: SelectJoinStep<X>,
+            select: (DSLContext) -> SelectJoinStep<X>,
             mapper: (X) -> T,
         ): DepPair<T> =
             DepPair { cond, ctx, mode ->
-                val q = select.where(cond)
+                val q = select(ctx).where(cond)
 
                 when (mode) {
                     is ResultMode.One<*> -> {

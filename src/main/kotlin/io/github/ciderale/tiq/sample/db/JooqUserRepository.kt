@@ -21,29 +21,29 @@ class JooqUserRepository(
         return pair.fetch(spec.mode, cond, ctx)
     }
 
-    private fun <T> mappingPair(projection: UserRepository.UP<T>): DepPair<T> =
-        when (projection) {
-            UserRepository.Summary -> {
-                DepPair.of(
-                    ctx.select(USER.ID, USER.NAME).from(USER),
-                ) { UserSummary(it[USER.ID], it[USER.NAME]) as T }
-            }
-
-            UserRepository.Detail -> {
-                DepPair.of(
-                    ctx.select(USER.ID, USER.NAME, USER.EMAIL).from(USER),
-                ) {
-                    UserDetail(
-                        id = it[USER.ID]!!,
-                        name = it[USER.NAME]!!,
-                        email = it[USER.EMAIL]!!,
-                    ) as T
-                }
-            }
-        }
-
     private fun condition(query: UserRepository.Query): Condition =
         DSL.and(
             if (query.activeOnly) USER.ACTIVE?.isTrue else DSL.noCondition(),
         )
 }
+
+private fun <T> mappingPair(projection: UserRepository.UP<T>): DepPair<T> =
+    when (projection) {
+        UserRepository.Summary -> {
+            DepPair.of(
+                { ctx -> ctx.select(USER.ID, USER.NAME).from(USER) },
+            ) { UserSummary(it[USER.ID], it[USER.NAME]) as T }
+        }
+
+        UserRepository.Detail -> {
+            DepPair.of(
+                { ctx -> ctx.select(USER.ID, USER.NAME, USER.EMAIL).from(USER) },
+            ) {
+                UserDetail(
+                    id = it[USER.ID]!!,
+                    name = it[USER.NAME]!!,
+                    email = it[USER.EMAIL]!!,
+                ) as T
+            }
+        }
+    }
