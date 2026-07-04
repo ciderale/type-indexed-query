@@ -25,6 +25,10 @@ class DepPair<T> private constructor(
                 val q = select(ctx).where(cond)
 
                 when (mode) {
+                    is ResultMode.Count<*> -> {
+                        ctx.fetchCount(q)
+                    }
+
                     is ResultMode.One<*> -> {
                         q.fetchSingle(mapper)
                     }

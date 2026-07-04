@@ -44,5 +44,11 @@ class JooqTest {
                 UserRepository.Query(),
                 Mode.Paged(1, 1).of(UserRepository.Detail),
             ).also(::println)
+
+        repo
+            .fetch(
+                UserRepository.Query(activeOnly = true),
+                Mode.Count.of(UserRepository.Summary),
+            ).also(::println)
     }
 }
