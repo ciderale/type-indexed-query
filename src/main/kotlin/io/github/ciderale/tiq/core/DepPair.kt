@@ -41,7 +41,7 @@ class DepPair<T> private constructor(
                                 .limit(mode.limit)
                                 .fetch(mapper)
 
-                        PagedList(items, total, mode.offset)
+                        PagedList(items, offset = mode.offset, total = total)
                     }
                 }
             }
