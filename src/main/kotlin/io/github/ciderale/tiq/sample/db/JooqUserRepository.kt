@@ -2,6 +2,7 @@ package io.github.ciderale.tiq.sample.db
 
 import io.github.ciderale.tiq.core.FetchSpec
 import io.github.ciderale.tiq.core.SelectMappingPair
+import io.github.ciderale.tiq.core.SelectMappingRegistry
 import io.github.ciderale.tiq.sample.UserRepository
 import io.github.ciderale.tiq.sample.domain.UserDetail
 import io.github.ciderale.tiq.sample.domain.UserSummary
@@ -28,23 +29,22 @@ class JooqUserRepository(
         )
 }
 
-private fun <T> mappingPair(projection: UserRepository.UP<T>): SelectMappingPair<T> =
-    when (projection) {
-        UserRepository.Summary -> {
-            SelectMappingPair.of(
-                { ctx -> ctx.select(USER.ID, USER.NAME).from(USER) },
-            ) { UserSummary(it[USER.ID], it[USER.NAME]) as T }
-        }
+val summaryMapping =
+    SelectMappingPair.of(
+        { ctx -> ctx.select(USER.ID, USER.NAME).from(USER) },
+        { UserSummary(it[USER.ID], it[USER.NAME]) },
+    )
 
-        UserRepository.Detail -> {
-            SelectMappingPair.of(
-                { ctx -> ctx.select(USER.ID, USER.NAME, USER.EMAIL).from(USER) },
-            ) {
-                UserDetail(
-                    id = it[USER.ID]!!,
-                    name = it[USER.NAME]!!,
-                    email = it[USER.EMAIL]!!,
-                ) as T
-            }
-        }
+val detailMapping =
+    SelectMappingPair.of(
+        { ctx -> ctx.select(USER.ID, USER.NAME, USER.EMAIL).from(USER) },
+        { UserDetail(id = it[USER.ID]!!, name = it[USER.NAME]!!, email = it[USER.EMAIL]!!) },
+    )
+
+val registry =
+    SelectMappingRegistry.build {
+        UserRepository.Summary put summaryMapping
+        UserRepository.Detail put detailMapping
     }
+
+private fun <T> mappingPair(projection: UserRepository.UP<T>): SelectMappingPair<T> = registry[projection]
