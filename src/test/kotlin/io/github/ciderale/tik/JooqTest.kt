@@ -42,7 +42,7 @@ class JooqTest {
         repo
             .fetch(
                 UserRepository.Query(),
-                Mode.Paged(0, 2).of(UserRepository.Detail),
+                Mode.Paged(1, 1).of(UserRepository.Detail),
             ).also(::println)
     }
 }
