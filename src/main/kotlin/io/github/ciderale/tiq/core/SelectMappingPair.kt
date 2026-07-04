@@ -6,47 +6,50 @@ import org.jooq.DSLContext
 import org.jooq.Record
 import org.jooq.SelectJoinStep
 
-class SelectMappingPair<T> private constructor(
-    private val run: (Condition, DSLContext, ResultMode<*, *>) -> Any,
-) {
-    @Suppress("UNCHECKED_CAST")
+interface SelectMappingPair<T> {
     fun <R> fetch(
         mode: ResultMode<T, R>,
         cond: Condition,
         ctx: DSLContext,
-    ): R = run(cond, ctx, mode) as R
+    ): R
 
     companion object {
         fun <X : Record, T> of(
             select: (DSLContext) -> SelectJoinStep<X>,
             mapper: (X) -> T,
         ): SelectMappingPair<T> =
-            SelectMappingPair { cond, ctx, mode ->
-                val q = select(ctx).where(cond)
+            object : SelectMappingPair<T> {
+                override fun <R> fetch(
+                    mode: ResultMode<T, R>,
+                    cond: Condition,
+                    ctx: DSLContext,
+                ): R {
+                    val sqlQuery = select(ctx).where(cond)
 
-                when (mode) {
-                    is ResultMode.Count<*> -> {
-                        ctx.fetchCount(q)
-                    }
+                    return when (mode) {
+                        is ResultMode.Count<*> -> {
+                            ctx.fetchCount(sqlQuery)
+                        }
 
-                    is ResultMode.One<*> -> {
-                        q.fetchSingle(mapper)
-                    }
+                        is ResultMode.One<*> -> {
+                            sqlQuery.fetchSingle(mapper)
+                        }
 
-                    is ResultMode.Many -> {
-                        q.fetch(mapper)
-                    }
+                        is ResultMode.Many -> {
+                            sqlQuery.fetch(mapper)
+                        }
 
-                    is ResultMode.Paged -> {
-                        val total = ctx.fetchCount(q)
-                        val items =
-                            q
-                                .offset(mode.offset)
-                                .limit(mode.limit)
-                                .fetch(mapper)
+                        is ResultMode.Paged -> {
+                            val total = ctx.fetchCount(sqlQuery)
+                            val items =
+                                sqlQuery
+                                    .offset(mode.offset)
+                                    .limit(mode.limit)
+                                    .fetch(mapper)
 
-                        PagedList(items, offset = mode.offset, total = total)
-                    }
+                            PagedList(items, offset = mode.offset, total = total)
+                        }
+                    } as R
                 }
             }
     }
