@@ -17,16 +17,16 @@ class JooqUserRepository(
         spec: FetchSpec<T, R, UserRepository.UP<T>>,
     ): R {
         val cond = condition(query)
-        val pair: DepPair<*> = mappingPair(spec.projection)
+        val pair: DepPair<T> = mappingPair(spec.projection)
         return pair.fetch(spec.mode, cond, ctx)
     }
 
-    private fun <T> mappingPair(projection: UserRepository.UP<T>): DepPair<*> =
+    private fun <T> mappingPair(projection: UserRepository.UP<T>): DepPair<T> =
         when (projection) {
             UserRepository.Summary -> {
                 DepPair.of(
                     ctx.select(USER.ID, USER.NAME).from(USER),
-                ) { UserSummary(it[USER.ID], it[USER.NAME]) }
+                ) { UserSummary(it[USER.ID], it[USER.NAME]) as T }
             }
 
             UserRepository.Detail -> {
@@ -37,7 +37,7 @@ class JooqUserRepository(
                         id = it[USER.ID]!!,
                         name = it[USER.NAME]!!,
                         email = it[USER.EMAIL]!!,
-                    )
+                    ) as T
                 }
             }
         }

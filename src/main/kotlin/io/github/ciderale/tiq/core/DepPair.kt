@@ -11,7 +11,7 @@ class DepPair<T> private constructor(
 ) {
     @Suppress("UNCHECKED_CAST")
     fun <R> fetch(
-        mode: ResultMode<*, R>,
+        mode: ResultMode<T, R>,
         cond: Condition,
         ctx: DSLContext,
     ): R = run(cond, ctx, mode) as R
