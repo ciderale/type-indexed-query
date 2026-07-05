@@ -12,7 +12,7 @@ interface UserRepository {
     )
 
     // Projections belong to this Query scope
-    sealed interface UP<T> : Projection<T>
+    sealed interface UP<T> : Projection<Query, T>
 
     data object Summary : UP<UserSummary>
 

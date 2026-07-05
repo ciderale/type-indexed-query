@@ -9,7 +9,7 @@ interface OrderRepository {
         val openOnly: Boolean = false,
     )
 
-    object Summary : Projection<OrderSummary>
+    object Summary : Projection<Query, OrderSummary>
 
     fun <T, R> fetch(
         query: Query,

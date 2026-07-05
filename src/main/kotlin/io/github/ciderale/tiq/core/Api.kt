@@ -1,11 +1,11 @@
 package io.github.ciderale.tiq.core
 
-interface Projection<T>
+interface Projection<Q, T>
 
 interface Fetcher<T, R>
 
 data class QuerySpec<Q, T, R>(
     val query: Q,
-    val projection: Projection<T>,
+    val projection: Projection<Q, T>,
     val mode: Fetcher<T, R>,
 )

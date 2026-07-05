@@ -27,11 +27,11 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
             "Missing Condition Builder for $query"
         })(query)
 
-    val mapSelect = mutableMapOf<Projection<*>, JooqQueryComponents.Selector<*>>()
-    val mapMapper = mutableMapOf<Projection<*>, JooqQueryComponents.Mapper<*, *>>()
+    val mapSelect = mutableMapOf<Projection<*, *>, JooqQueryComponents.Selector<*>>()
+    val mapMapper = mutableMapOf<Projection<*, *>, JooqQueryComponents.Mapper<*, *>>()
 
-    fun <T, X : Record> addProjection(
-        projection: Projection<T>,
+    fun <Q, T, X : Record> addProjection(
+        projection: Projection<Q, T>,
         selector: JooqQueryComponents.Selector<X>,
         mapper: JooqQueryComponents.Mapper<X, T>,
     ) {
@@ -39,10 +39,10 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
         mapMapper[projection] = mapper
     }
 
-    private fun <T> makeSelect(projection: Projection<T>): JooqQueryComponents.Selector<Record> =
+    private fun <Q, T> makeSelect(projection: Projection<Q, T>): JooqQueryComponents.Selector<Record> =
         checkNotNull(mapSelect[projection], { "Missing selector for $projection" }) as JooqQueryComponents.Selector<Record>
 
-    private fun <T> makeMapper(projection: Projection<T>): JooqQueryComponents.Mapper<Record, T> =
+    private fun <Q, T> makeMapper(projection: Projection<Q, T>): JooqQueryComponents.Mapper<Record, T> =
         checkNotNull(
             mapMapper[projection],
             { "Missing mapper for projection $projection" },
