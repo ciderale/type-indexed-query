@@ -31,14 +31,15 @@ class JooqTest {
         val ctx = dsl()
         val repo = JooqUserRepository(ctx)
 
+        val id = "1"
         val oneUser: UserSummary =
             repo
                 .fetch(
-                    UserRepository.Query(id = "1"),
+                    UserRepository.Query(id = id),
                     UserRepository.Summary,
                     fetcher = ClassicFetcher.One(),
                 ).also(::println)
-        assertEquals("1", oneUser.id)
+        assertEquals(id, oneUser.id)
 
         val allDetails: List<UserDetail> =
             repo
@@ -49,6 +50,17 @@ class JooqTest {
                     ordering = UserRepository.OrderBy.NAME,
                     direction = OrderingDirection.DESC,
                 ).also(::println)
+        assertEquals(
+            allDetails.reversed(),
+            repo
+                .fetch(
+                    UserRepository.Query(),
+                    UserRepository.Detail,
+                    fetcher = ClassicFetcher.Many(),
+                    ordering = UserRepository.OrderBy.NAME,
+                    direction = OrderingDirection.ASC,
+                ).also(::println),
+        )
 
         val pagedDetails: PagedList<UserDetail> =
             repo
@@ -66,5 +78,14 @@ class JooqTest {
                     UserRepository.Summary,
                     ClassicFetcher.Count(),
                 ).also(::println)
+
+        val activeUser =
+            repo
+                .fetch(
+                    UserRepository.Query(activeOnly = true),
+                    UserRepository.Summary,
+                    ClassicFetcher.Many(),
+                )
+        assertEquals(countActive, activeUser.size)
     }
 }
