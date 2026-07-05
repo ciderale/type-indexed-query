@@ -1,40 +1,13 @@
-package io.github.ciderale.tiq.core
+package io.github.ciderale.tiq.core.experimental
 
-import io.github.ciderale.tiq.sample.domain.PagedList
+import io.github.ciderale.tiq.core.Projection
+import io.github.ciderale.tiq.core.ResultMode
+import io.github.ciderale.tiq.sample.domain.Mode
 
 data class FetchSpec<T, R, out P : Projection<T>>(
     val projection: P,
     val mode: ResultMode<T, R>,
 )
-
-interface Projection<T>
-
-// This is important to dependently determine the return type
-sealed interface ResultMode<T, R> {
-    class Count<T> : ResultMode<T, Int>
-
-    class One<T> : ResultMode<T, T>
-
-    class Many<T> : ResultMode<T, List<T>>
-
-    data class Paged<T>(
-        val offset: Int,
-        val limit: Int,
-    ) : ResultMode<T, PagedList<T>>
-}
-
-sealed interface Mode {
-    object Count : Mode
-
-    object One : Mode
-
-    object Many : Mode
-
-    data class Paged(
-        val offset: Int,
-        val limit: Int,
-    ) : Mode
-}
 
 // FetchSpec factory methods
 fun <T, P : Projection<T>> Mode.Count.of(p: P) = FetchSpec(p, ResultMode.Count())

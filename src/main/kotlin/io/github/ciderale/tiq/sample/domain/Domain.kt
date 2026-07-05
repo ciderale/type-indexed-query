@@ -15,6 +15,19 @@ data class OrderSummary(
     val x: String,
 )
 
+sealed interface Mode {
+    object Count : Mode
+
+    object One : Mode
+
+    object Many : Mode
+
+    data class Paged(
+        val offset: Int,
+        val limit: Int,
+    ) : Mode
+}
+
 data class PagedList<T>(
     val items: List<T>,
     val offset: Int,
