@@ -2,6 +2,7 @@ package io.github.ciderale.tiq.sample
 
 import io.github.ciderale.tiq.core.Fetcher
 import io.github.ciderale.tiq.core.Ordering
+import io.github.ciderale.tiq.core.OrderingDirection
 import io.github.ciderale.tiq.core.Projection
 import io.github.ciderale.tiq.sample.domain.UserDetail
 import io.github.ciderale.tiq.sample.domain.UserSummary
@@ -28,5 +29,7 @@ interface UserRepository {
         query: Query,
         projection: UP<T>,
         fetcher: Fetcher<T, R>,
+        ordering: OrderBy = OrderBy.NAME,
+        direction: OrderingDirection = OrderingDirection.ASC,
     ): R
 }

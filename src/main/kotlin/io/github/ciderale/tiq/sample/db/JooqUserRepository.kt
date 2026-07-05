@@ -1,9 +1,13 @@
 package io.github.ciderale.tiq.sample.db
 
 import io.github.ciderale.tiq.core.Fetcher
+import io.github.ciderale.tiq.core.OrderingDirection
 import io.github.ciderale.tiq.core.QuerySpec
 import io.github.ciderale.tiq.core.jooq.JooqQueryTranslatorImpl
+import io.github.ciderale.tiq.core.jooq.JooqQueryTranslatorImpl.addOrdering
 import io.github.ciderale.tiq.core.jooq.addClassicFetcher
+import io.github.ciderale.tiq.core.jooq.ascending
+import io.github.ciderale.tiq.core.jooq.descending
 import io.github.ciderale.tiq.core.jooq.fetch
 import io.github.ciderale.tiq.sample.UserRepository
 import io.github.ciderale.tiq.sample.domain.UserDetail
@@ -21,8 +25,8 @@ class JooqUserRepository(
                 it.activeOnly?.let(USER.ACTIVE::eq),
             )
         }
-        JooqQueryTranslatorImpl.addOrdering(UserRepository.OrderBy.NAME) { it.orderBy(USER.NAME.desc()) }
-        JooqQueryTranslatorImpl.addOrdering(UserRepository.OrderBy.ID) { it.orderBy(USER.ID.desc()) }
+        addOrdering(UserRepository.OrderBy.NAME, USER.NAME::descending, USER.ID::ascending)
+        addOrdering(UserRepository.OrderBy.ID, USER.ID::ascending)
         JooqQueryTranslatorImpl.addProjection(
             UserRepository.Summary,
             { ctx -> ctx.select(USER.ID, USER.NAME).from(USER) },
@@ -40,5 +44,11 @@ class JooqUserRepository(
         query: UserRepository.Query,
         projection: UserRepository.UP<T>,
         fetcher: Fetcher<T, R>,
-    ): R = ctx.fetch(QuerySpec(query, UserRepository.OrderBy.NAME, projection, fetcher), JooqQueryTranslatorImpl)
+        ordering: UserRepository.OrderBy,
+        direction: OrderingDirection,
+    ): R =
+        ctx.fetch(
+            QuerySpec(query = query, ordering = ordering, direction = direction, projection, fetcher),
+            JooqQueryTranslatorImpl,
+        )
 }

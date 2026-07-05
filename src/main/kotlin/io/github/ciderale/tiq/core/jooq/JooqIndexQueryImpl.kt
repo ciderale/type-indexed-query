@@ -1,13 +1,13 @@
 package io.github.ciderale.tiq.core.jooq
 
+import io.github.ciderale.tiq.core.OrderingDirection
 import io.github.ciderale.tiq.core.QuerySpec
 import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.Record
-import org.jooq.SelectConditionStep
 import org.jooq.SelectJoinStep
-import org.jooq.SelectSeekStep1
-import org.jooq.impl.DSL
+import org.jooq.SelectSeekStepN
+import org.jooq.SortField
 
 interface JooqQueryTranslator {
     fun <Q, T, R> translate(spec: QuerySpec<Q, T, R>): JooqQueryComponents<*, T, R>
@@ -16,17 +16,20 @@ interface JooqQueryTranslator {
 data class JooqQueryComponents<X : Record, T, R>(
     val condition: Condition,
     val select: Selector<X>,
-    val sorter: Sorter<X>,
+    val sorter: Sorter,
+    val direction: OrderingDirection,
     val mapper: Mapper<X, T>,
     val fetch: Fetcher<X, T, R>,
 ) {
     typealias Selector<X> = (DSLContext) -> SelectJoinStep<X>
-    typealias Sorter<X> = (SelectConditionStep<X>) -> SelectSeekStep1<X, *>
+    typealias SortFieldFactory = (OrderingDirection) -> SortField<*>
+    typealias Sorter = List<SortFieldFactory>
     typealias Mapper<X, T> = (X) -> T
-    typealias Fetcher<X, T, R> = (DSLContext, SelectSeekStep1<X, *>, (X) -> T) -> R
+    typealias Fetcher<X, T, R> = (DSLContext, SelectSeekStepN<X>, (X) -> T) -> R
 
     fun execute(ctx: DSLContext): R {
-        val sqlQuery = select(ctx).where(condition).let(sorter)
+        val ordering = sorter.map { it(direction) }
+        val sqlQuery = select(ctx).where(condition).orderBy(ordering)
         return fetch(ctx, sqlQuery, mapper)
     }
 }

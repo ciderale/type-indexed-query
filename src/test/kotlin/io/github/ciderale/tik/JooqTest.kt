@@ -1,6 +1,7 @@
 package io.github.ciderale.tik
 
 import io.github.ciderale.tiq.core.ClassicFetcher
+import io.github.ciderale.tiq.core.OrderingDirection
 import io.github.ciderale.tiq.core.PagedList
 import io.github.ciderale.tiq.sample.UserRepository
 import io.github.ciderale.tiq.sample.db.JooqUserRepository
@@ -35,7 +36,7 @@ class JooqTest {
                 .fetch(
                     UserRepository.Query(id = "1"),
                     UserRepository.Summary,
-                    ClassicFetcher.One(),
+                    fetcher = ClassicFetcher.One(),
                 ).also(::println)
         assertEquals("1", oneUser.id)
 
@@ -44,7 +45,9 @@ class JooqTest {
                 .fetch(
                     UserRepository.Query(),
                     UserRepository.Detail,
-                    ClassicFetcher.Many(),
+                    fetcher = ClassicFetcher.Many(),
+                    ordering = UserRepository.OrderBy.NAME,
+                    direction = OrderingDirection.DESC,
                 ).also(::println)
 
         val pagedDetails: PagedList<UserDetail> =

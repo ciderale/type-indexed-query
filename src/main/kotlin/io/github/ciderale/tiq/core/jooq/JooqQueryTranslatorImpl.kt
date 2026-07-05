@@ -6,7 +6,6 @@ import io.github.ciderale.tiq.core.Projection
 import io.github.ciderale.tiq.core.QuerySpec
 import org.jooq.Condition
 import org.jooq.Record
-import org.jooq.impl.DSL
 import kotlin.reflect.KClass
 
 object JooqQueryTranslatorImpl : JooqQueryTranslator {
@@ -15,6 +14,7 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
             makeCondition(spec.query),
             select = makeSelect(spec.projection),
             sorter = makeSorter(spec.ordering),
+            direction = spec.direction,
             mapper = makeMapper(spec.projection),
             fetch = makeFetcher(spec.fetcher),
         )
@@ -24,11 +24,11 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
     private fun <Q, T> makeSelect(projection: Projection<Q, T>): JooqQueryComponents.Selector<Record> =
         checkCast<JooqQueryComponents.Selector<Record>>(mapSelect, projection)
 
-    private fun <Q> makeSorter(ordering: Ordering<Q>?): JooqQueryComponents.Sorter<Record> =
+    private fun <Q> makeSorter(ordering: Ordering<Q>?): JooqQueryComponents.Sorter =
         if (ordering == null) {
-            { it.orderBy(DSL.noField()) }
+            listOf()
         } else {
-            checkCast<JooqQueryComponents.Sorter<Record>>(mapSorter, ordering)
+            checkCast(mapSorter, ordering)
         }
 
     private fun <Q, T> makeMapper(projection: Projection<Q, T>): JooqQueryComponents.Mapper<Record, T> =
@@ -48,7 +48,7 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
     val mapCondition = mutableMapOf<KClass<*>, (Any) -> Condition>()
     val mapSelect = mutableMapOf<Projection<*, *>, JooqQueryComponents.Selector<*>>()
     val mapMapper = mutableMapOf<Projection<*, *>, JooqQueryComponents.Mapper<*, *>>()
-    val mapSorter = mutableMapOf<Ordering<*>, JooqQueryComponents.Sorter<*>>()
+    val mapSorter = mutableMapOf<Ordering<*>, JooqQueryComponents.Sorter>()
     val mapFetcher = mutableMapOf<KClass<*>, (Any) -> JooqQueryComponents.Fetcher<*, *, *>>()
 
     // ---------------- populating the lookup table  ------------------------
@@ -58,9 +58,9 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
 
     fun <Q> addOrdering(
         ordering: Ordering<Q>,
-        sorter: JooqQueryComponents.Sorter<*>,
+        vararg sorter: JooqQueryComponents.SortFieldFactory,
     ) {
-        mapSorter[ordering] = sorter
+        mapSorter[ordering] = sorter.toList()
     }
 
     fun <Q, T, X : Record> addProjection(

@@ -5,8 +5,7 @@ import io.github.ciderale.tiq.core.PagedList
 import io.github.ciderale.tiq.core.jooq.JooqQueryComponents
 import org.jooq.DSLContext
 import org.jooq.Record
-import org.jooq.SelectConditionStep
-import org.jooq.SelectSeekStep1
+import org.jooq.SelectSeekStepN
 
 fun JooqQueryTranslatorImpl.addClassicFetcher() {
     JooqQueryTranslatorImpl.addFetcher<Any, Int, ClassicFetcher.Count<Any>> { FetchCount() }
@@ -18,7 +17,7 @@ fun JooqQueryTranslatorImpl.addClassicFetcher() {
 class FetchCount<T> : JooqQueryComponents.Fetcher<Record, T, Int> {
     override fun invoke(
         ctx: DSLContext,
-        sqlQuery: SelectSeekStep1<Record, *>,
+        sqlQuery: SelectSeekStepN<Record>,
         mapper: (Record) -> T,
     ): Int = ctx.fetchCount(sqlQuery)
 }
@@ -26,7 +25,7 @@ class FetchCount<T> : JooqQueryComponents.Fetcher<Record, T, Int> {
 class FetchOne<T> : JooqQueryComponents.Fetcher<Record, T, T> {
     override fun invoke(
         ctx: DSLContext,
-        sqlQuery: SelectSeekStep1<Record, *>,
+        sqlQuery: SelectSeekStepN<Record>,
         mapper: (Record) -> T,
     ): T = sqlQuery.fetchSingle(mapper)
 }
@@ -34,7 +33,7 @@ class FetchOne<T> : JooqQueryComponents.Fetcher<Record, T, T> {
 class FetchMany<T> : JooqQueryComponents.Fetcher<Record, T, List<T>> {
     override fun invoke(
         ctx: DSLContext,
-        sqlQuery: SelectSeekStep1<Record, *>,
+        sqlQuery: SelectSeekStepN<Record>,
         mapper: (Record) -> T,
     ): List<T> = sqlQuery.fetch(mapper)
 }
@@ -44,7 +43,7 @@ class FetchPaged<T>(
 ) : JooqQueryComponents.Fetcher<Record, T, PagedList<T>> {
     override fun invoke(
         ctx: DSLContext,
-        sqlQuery: SelectSeekStep1<Record, *>,
+        sqlQuery: SelectSeekStepN<Record>,
         mapper: (Record) -> T,
     ): PagedList<T> {
         val total = ctx.fetchCount(sqlQuery)
