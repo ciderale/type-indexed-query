@@ -16,19 +16,18 @@ interface JooqQueryTranslator {
 data class JooqQueryComponents<X : Record, T, R>(
     val condition: Condition,
     val select: Selector<X>,
-    val sorter: Sorter,
+    val ordering: List<SortFieldFactory>,
     val direction: OrderingDirection,
     val mapper: Mapper<X, T>,
     val fetch: Fetcher<X, T, R>,
 ) {
     typealias Selector<X> = (DSLContext) -> SelectJoinStep<X>
     typealias SortFieldFactory = (OrderingDirection) -> SortField<*>
-    typealias Sorter = List<SortFieldFactory>
     typealias Mapper<X, T> = (X) -> T
     typealias Fetcher<X, T, R> = (DSLContext, SelectSeekStepN<X>, (X) -> T) -> R
 
     fun execute(ctx: DSLContext): R {
-        val ordering = sorter.map { it(direction) }
+        val ordering = ordering.map { it(direction) }
         val sqlQuery = select(ctx).where(condition).orderBy(ordering)
         return fetch(ctx, sqlQuery, mapper)
     }
