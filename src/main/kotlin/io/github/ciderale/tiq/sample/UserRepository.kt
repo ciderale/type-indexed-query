@@ -1,5 +1,6 @@
 package io.github.ciderale.tiq.sample
 
+import io.github.ciderale.tiq.core.ClassicFetcher
 import io.github.ciderale.tiq.core.Fetcher
 import io.github.ciderale.tiq.core.Ordering
 import io.github.ciderale.tiq.core.OrderingDirection
@@ -32,4 +33,9 @@ interface UserRepository {
         ordering: OrderBy = OrderBy.NAME,
         direction: OrderingDirection = OrderingDirection.ASC,
     ): R
+
+    fun <T> get(
+        id: String,
+        projection: UP<T>,
+    ): T = fetch(Query(id = id), projection, ClassicFetcher.One())
 }

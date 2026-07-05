@@ -32,13 +32,7 @@ class JooqTest {
         val repo = JooqUserRepository(ctx)
 
         val id = "1"
-        val oneUser: UserSummary =
-            repo
-                .fetch(
-                    UserRepository.Query(id = id),
-                    UserRepository.Summary,
-                    fetcher = ClassicFetcher.One(),
-                ).also(::println)
+        val oneUser: UserSummary = repo.get(id, UserRepository.Summary)
         assertEquals(id, oneUser.id)
 
         val allDetails: List<UserDetail> =
