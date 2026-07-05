@@ -1,6 +1,6 @@
 package io.github.ciderale.tiq.sample.db
 
-import io.github.ciderale.tiq.core.FetchSpec
+import io.github.ciderale.tiq.core.ResultMode
 import io.github.ciderale.tiq.core.SelectMappingPair
 import io.github.ciderale.tiq.core.SelectMappingRegistry
 import io.github.ciderale.tiq.core.fetch
@@ -16,8 +16,10 @@ class JooqUserRepository(
 ) : UserRepository {
     override fun <T, R> fetch(
         query: UserRepository.Query,
-        spec: FetchSpec<T, R, UserRepository.UP<T>>,
-    ): R = ctx.fetch(query.toCondition(), spec, registry)
+        mode: ResultMode<T, R>,
+        projection: UserRepository.UP<T>,
+//        spec: FetchSpec<T, R, UserRepository.UP<T>>,
+    ): R = ctx.fetch(query.toCondition(), projection, mode, registry)
 }
 
 fun UserRepository.Query.toCondition(): Condition =

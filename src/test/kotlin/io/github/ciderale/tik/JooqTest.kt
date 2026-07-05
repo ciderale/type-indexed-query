@@ -1,14 +1,17 @@
 package io.github.ciderale.tik
 
-import io.github.ciderale.tiq.core.Mode
-import io.github.ciderale.tiq.core.of
+import io.github.ciderale.tiq.core.ResultMode
 import io.github.ciderale.tiq.sample.UserRepository
 import io.github.ciderale.tiq.sample.db.JooqUserRepository
+import io.github.ciderale.tiq.sample.domain.PagedList
+import io.github.ciderale.tiq.sample.domain.UserDetail
+import io.github.ciderale.tiq.sample.domain.UserSummary
 import org.jooq.DSLContext
 import org.jooq.SQLDialect
 import org.jooq.impl.DSL
 import org.junit.jupiter.api.Test
 import java.sql.DriverManager
+import kotlin.test.assertEquals
 
 class JooqTest {
     private fun dsl(): DSLContext {
@@ -27,28 +30,38 @@ class JooqTest {
         val ctx = dsl()
         val repo = JooqUserRepository(ctx)
 
-        repo
-            .fetch(
-                UserRepository.Query(id = "1"),
-                Mode.One.of(UserRepository.Summary),
-            ).also(::println)
+        val oneUser: UserSummary =
+            repo
+                .fetch(
+                    UserRepository.Query(id = "1"),
+                    ResultMode.One(),
+                    UserRepository.Summary,
+                ).also(::println)
+        assertEquals("1", oneUser.id)
 
-        repo
-            .fetch(
-                UserRepository.Query(),
-                Mode.Many.of(UserRepository.Detail),
-            ).also(::println)
+        val allDetails: List<UserDetail> =
+            repo
+                .fetch(
+                    UserRepository.Query(),
+                    ResultMode.Many(),
+                    UserRepository.Detail,
+                ).also(::println)
 
-        repo
-            .fetch(
-                UserRepository.Query(),
-                Mode.Paged(1, 1).of(UserRepository.Detail),
-            ).also(::println)
+        val pagedDetails: PagedList<UserDetail> =
+            repo
+                .fetch(
+                    UserRepository.Query(),
+                    ResultMode.Paged(1, 1),
+                    UserRepository.Detail,
+                ).also(::println)
+        assertEquals(3, pagedDetails.total)
 
-        repo
-            .fetch(
-                UserRepository.Query(activeOnly = true),
-                Mode.Count.of(UserRepository.Summary),
-            ).also(::println)
+        val countActive: Int =
+            repo
+                .fetch(
+                    UserRepository.Query(activeOnly = true),
+                    ResultMode.Count(),
+                    UserRepository.Summary,
+                ).also(::println)
     }
 }
