@@ -16,19 +16,34 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
             fetch = makeFetcher(spec.fetcher),
         )
 
-    val mapCondition = mutableMapOf<KClass<*>, (Any) -> Condition>()
+    private fun <Q> makeCondition(query: Q): Condition = checkCast<(Q) -> Condition>(mapCondition, query!!::class)(query)
 
-    inline fun <reified Q : Any> addQuery(toCondition: (Q) -> Condition) {
-        mapCondition[Q::class] = { toCondition(it as Q) }
+    private fun <Q, T> makeSelect(projection: Projection<Q, T>): JooqQueryComponents.Selector<Record> =
+        checkCast<JooqQueryComponents.Selector<Record>>(mapSelect, projection)
+
+    private fun <Q, T> makeMapper(projection: Projection<Q, T>): JooqQueryComponents.Mapper<Record, T> =
+        checkCast<JooqQueryComponents.Mapper<Record, T>>(mapMapper, projection)
+
+    private fun <T, R> makeFetcher(fetcher: Fetcher<T, R>): JooqQueryComponents.Fetcher<Record, T, R> {
+        val factory = checkCast<(Fetcher<T, R>) -> JooqQueryComponents.Fetcher<Record, T, R>>(mapFetcher, fetcher::class)
+        return factory(fetcher)
     }
 
-    private fun <Q> makeCondition(query: Q): Condition =
-        checkNotNull(mapCondition[query!!::class], {
-            "Missing Condition Builder for $query"
-        })(query)
+    private fun <T : Any> checkCast(
+        map: MutableMap<*, *>,
+        key: Any,
+    ): T = checkNotNull(map[key]) { "Missing definition for $key" } as T
 
+    val mapCondition = mutableMapOf<KClass<*>, (Any) -> Condition>()
     val mapSelect = mutableMapOf<Projection<*, *>, JooqQueryComponents.Selector<*>>()
     val mapMapper = mutableMapOf<Projection<*, *>, JooqQueryComponents.Mapper<*, *>>()
+    val mapFetcher = mutableMapOf<KClass<*>, (Any) -> JooqQueryComponents.Fetcher<*, *, *>>()
+
+    // ---------------- populating the lookup table  ------------------------
+    inline fun <reified Q : Any> addQuery(noinline toCondition: (Q) -> Condition) {
+        mapCondition[Q::class] = toCondition as (Any) -> Condition
+//        mapCondition[Q::class] = { toCondition(it as Q) }
+    }
 
     fun <Q, T, X : Record> addProjection(
         projection: Projection<Q, T>,
@@ -39,25 +54,7 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
         mapMapper[projection] = mapper
     }
 
-    private fun <Q, T> makeSelect(projection: Projection<Q, T>): JooqQueryComponents.Selector<Record> =
-        checkNotNull(mapSelect[projection], { "Missing selector for $projection" }) as JooqQueryComponents.Selector<Record>
-
-    private fun <Q, T> makeMapper(projection: Projection<Q, T>): JooqQueryComponents.Mapper<Record, T> =
-        checkNotNull(
-            mapMapper[projection],
-            { "Missing mapper for projection $projection" },
-        ) as JooqQueryComponents.Mapper<Record, T>
-
-    val mapFetcher = mutableMapOf<KClass<*>, (Any) -> JooqQueryComponents.Fetcher<*, *, *>>()
-
     inline fun <T, R, reified M : Fetcher<T, R>> addFetcher(noinline fetcher: (M) -> JooqQueryComponents.Fetcher<Record, T, R>) {
         mapFetcher[M::class] = fetcher as (Any) -> JooqQueryComponents.Fetcher<*, *, *>
-    }
-
-    private fun <T, R> makeFetcher(fetcher: Fetcher<T, R>): JooqQueryComponents.Fetcher<Record, T, R> {
-        val factory =
-            checkNotNull(mapFetcher[fetcher::class], { "Missing Fetcher for $fetcher" })
-                as (Fetcher<T, R>) -> JooqQueryComponents.Fetcher<Record, T, R>
-        return factory(fetcher)
     }
 }
