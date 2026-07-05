@@ -6,7 +6,7 @@ import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.jooq.SelectJoinStep
-import org.jooq.SelectSeekStepN
+import org.jooq.SelectQuery
 import org.jooq.SortField
 
 interface JooqQueryTranslator {
@@ -24,12 +24,12 @@ data class JooqQueryComponents<X : Record, T, R>(
     typealias Selector<X> = (DSLContext) -> SelectJoinStep<X>
     typealias SortFieldFactory = (OrderingDirection) -> SortField<*>
     typealias Mapper<X, T> = (X) -> T
-    typealias Fetcher<X, T, R> = (DSLContext, SelectSeekStepN<X>, (X) -> T) -> R
+    typealias Fetcher<X, T, R> = (DSLContext, SelectQuery<X>, (X) -> T) -> R
 
     fun execute(ctx: DSLContext): R {
         val ordering = ordering.map { it(direction) }
         val sqlQuery = select(ctx).where(condition).orderBy(ordering)
-        return fetch(ctx, sqlQuery, mapper)
+        return fetch(ctx, sqlQuery.query, mapper)
     }
 }
 
