@@ -1,4 +1,4 @@
-package io.github.ciderale.tik
+package io.github.ciderale.tiq
 
 import io.github.ciderale.tiq.core.ClassicFetcher
 import io.github.ciderale.tiq.core.OrderingDirection
