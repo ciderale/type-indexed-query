@@ -1,7 +1,7 @@
 package io.github.ciderale.tiq.sample
 
 import io.github.ciderale.tiq.core.Projection
-import io.github.ciderale.tiq.core.experimental.FetchSpec
+import io.github.ciderale.tiq.core.ResultMode
 import io.github.ciderale.tiq.sample.domain.OrderSummary
 
 interface OrderRepository {
@@ -13,6 +13,7 @@ interface OrderRepository {
 
     fun <T, R> fetch(
         query: Query,
-        spec: FetchSpec<OrderSummary, R, Summary>,
+        projection: Summary,
+        mode: ResultMode<T, R>,
     ): R
 }
