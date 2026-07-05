@@ -1,9 +1,9 @@
 package io.github.ciderale.tik
 
-import io.github.ciderale.tiq.core.ResultMode
+import io.github.ciderale.tiq.core.ClassicFetcher
+import io.github.ciderale.tiq.core.PagedList
 import io.github.ciderale.tiq.sample.UserRepository
 import io.github.ciderale.tiq.sample.db.JooqUserRepository
-import io.github.ciderale.tiq.sample.domain.PagedList
 import io.github.ciderale.tiq.sample.domain.UserDetail
 import io.github.ciderale.tiq.sample.domain.UserSummary
 import org.jooq.DSLContext
@@ -34,7 +34,7 @@ class JooqTest {
             repo
                 .fetch(
                     UserRepository.Query(id = "1"),
-                    ResultMode.One(),
+                    ClassicFetcher.One(),
                     UserRepository.Summary,
                 ).also(::println)
         assertEquals("1", oneUser.id)
@@ -43,7 +43,7 @@ class JooqTest {
             repo
                 .fetch(
                     UserRepository.Query(),
-                    ResultMode.Many(),
+                    ClassicFetcher.Many(),
                     UserRepository.Detail,
                 ).also(::println)
 
@@ -51,7 +51,7 @@ class JooqTest {
             repo
                 .fetch(
                     UserRepository.Query(),
-                    ResultMode.Paged(1, 1),
+                    ClassicFetcher.Paged(1, 1),
                     UserRepository.Detail,
                 ).also(::println)
         assertEquals(3, pagedDetails.total)
@@ -60,7 +60,7 @@ class JooqTest {
             repo
                 .fetch(
                     UserRepository.Query(activeOnly = true),
-                    ResultMode.Count(),
+                    ClassicFetcher.Count(),
                     UserRepository.Summary,
                 ).also(::println)
     }

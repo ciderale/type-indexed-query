@@ -1,8 +1,8 @@
 package io.github.ciderale.tiq.core.jooq
 
+import io.github.ciderale.tiq.core.Fetcher
 import io.github.ciderale.tiq.core.Projection
 import io.github.ciderale.tiq.core.QuerySpec
-import io.github.ciderale.tiq.core.ResultMode
 import org.jooq.Condition
 import org.jooq.Record
 import kotlin.reflect.KClass
@@ -50,14 +50,14 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
 
     val mapFetcher = mutableMapOf<KClass<*>, (Any) -> JooqQueryComponents.Fetcher<*, *, *>>()
 
-    inline fun <T, R, reified M : ResultMode<T, R>> addFetcher(noinline fetcher: (M) -> JooqQueryComponents.Fetcher<Record, T, R>) {
+    inline fun <T, R, reified M : Fetcher<T, R>> addFetcher(noinline fetcher: (M) -> JooqQueryComponents.Fetcher<Record, T, R>) {
         mapFetcher[M::class] = fetcher as (Any) -> JooqQueryComponents.Fetcher<*, *, *>
     }
 
-    private fun <T, R> makeFetcher(mode: ResultMode<T, R>): JooqQueryComponents.Fetcher<Record, T, R> {
+    private fun <T, R> makeFetcher(mode: Fetcher<T, R>): JooqQueryComponents.Fetcher<Record, T, R> {
         val factory =
             checkNotNull(mapFetcher[mode::class], { "Missing Fetcher for $mode" })
-                as (ResultMode<T, R>) -> JooqQueryComponents.Fetcher<Record, T, R>
+                as (Fetcher<T, R>) -> JooqQueryComponents.Fetcher<Record, T, R>
         return factory(mode)
     }
 }

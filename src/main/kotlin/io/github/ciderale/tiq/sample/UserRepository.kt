@@ -1,7 +1,7 @@
 package io.github.ciderale.tiq.sample
 
+import io.github.ciderale.tiq.core.Fetcher
 import io.github.ciderale.tiq.core.Projection
-import io.github.ciderale.tiq.core.ResultMode
 import io.github.ciderale.tiq.sample.domain.UserDetail
 import io.github.ciderale.tiq.sample.domain.UserSummary
 
@@ -20,7 +20,7 @@ interface UserRepository {
 
     fun <T, R> fetch(
         query: Query,
-        mode: ResultMode<T, R>,
+        mode: Fetcher<T, R>,
         projection: UP<T>,
     ): R
 }

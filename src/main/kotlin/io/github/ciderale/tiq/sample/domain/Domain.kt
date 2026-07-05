@@ -27,9 +27,3 @@ sealed interface Mode {
         val limit: Int,
     ) : Mode
 }
-
-data class PagedList<T>(
-    val items: List<T>,
-    val offset: Int,
-    val total: Int,
-)

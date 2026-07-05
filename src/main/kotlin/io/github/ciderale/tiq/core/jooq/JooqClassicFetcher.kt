@@ -1,11 +1,18 @@
 package io.github.ciderale.tiq.core.jooq
 
-import io.github.ciderale.tiq.core.ResultMode
+import io.github.ciderale.tiq.core.ClassicFetcher
+import io.github.ciderale.tiq.core.PagedList
 import io.github.ciderale.tiq.core.jooq.JooqQueryComponents
-import io.github.ciderale.tiq.sample.domain.PagedList
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.jooq.SelectConditionStep
+
+fun JooqQueryTranslatorImpl.addClassicFetcher() {
+    JooqQueryTranslatorImpl.addFetcher<Any, Int, ClassicFetcher.Count<Any>> { FetchCount() }
+    JooqQueryTranslatorImpl.addFetcher<Any, Any, ClassicFetcher.One<Any>> { FetchOne() }
+    JooqQueryTranslatorImpl.addFetcher<Any, List<Any>, ClassicFetcher.Many<Any>> { FetchMany() }
+    JooqQueryTranslatorImpl.addFetcher<Any, PagedList<Any>, ClassicFetcher.Paged<Any>>(::FetchPaged)
+}
 
 class FetchCount<T> : JooqQueryComponents.Fetcher<Record, T, Int> {
     override fun invoke(
@@ -32,7 +39,7 @@ class FetchMany<T> : JooqQueryComponents.Fetcher<Record, T, List<T>> {
 }
 
 class FetchPaged<T>(
-    val mode: ResultMode.Paged<T>,
+    val mode: ClassicFetcher.Paged<T>,
 ) : JooqQueryComponents.Fetcher<Record, T, PagedList<T>> {
     override fun invoke(
         ctx: DSLContext,
