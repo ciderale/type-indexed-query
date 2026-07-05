@@ -17,3 +17,9 @@ sealed interface ResultMode<T, R> {
         val limit: Int,
     ) : ResultMode<T, PagedList<T>>
 }
+
+data class QuerySpec<Q, T, R>(
+    val query: Q,
+    val projection: Projection<T>,
+    val mode: ResultMode<T, R>,
+)
