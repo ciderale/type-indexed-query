@@ -83,6 +83,6 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
         mapFetcher[M::class] = fetcher as FetcherFactoryErased
     }
 
-    private fun <T, R> makeFetcher(fetcher: Fetcher<T, R>): JooqQueryComponents.Fetcher<Record, T, R> =
-        checkCast<FetcherFactory<T, R, Fetcher<T, R>>>(mapFetcher, fetcher::class)(fetcher)
+    private fun <T, R, M : Fetcher<T, R>> makeFetcher(fetcher: M): JooqQueryComponents.Fetcher<Record, T, R> =
+        checkCast<FetcherFactory<T, R, M>>(mapFetcher, fetcher::class)(fetcher)
 }
