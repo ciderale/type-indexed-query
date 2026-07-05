@@ -29,14 +29,15 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
 
     // ################### Query => Condition ########################################
     typealias ConditionFactory<Q> = (Q) -> Condition
+    typealias ConditionFactoryErased = ConditionFactory<*>
 
-    val mapCondition = mutableMapOf<KClass<*>, ConditionFactory<*>>()
+    val conditionFactoryRegistry = mutableMapOf<KClass<*>, ConditionFactoryErased>()
 
     inline fun <reified Q : Any> addQuery(noinline toCondition: ConditionFactory<Q>) {
-        mapCondition[Q::class] = { toCondition(it as Q) }
+        conditionFactoryRegistry[Q::class] = toCondition
     }
 
-    private fun <Q> makeCondition(query: Q): Condition = checkCast<(Q) -> Condition>(mapCondition, query!!::class)(query)
+    private fun <Q> makeCondition(query: Q): Condition = checkCast<ConditionFactory<Q>>(conditionFactoryRegistry, query!!::class)(query)
 
     // ################### Ordering/Sorting ########################################
     val mapSorter = mutableMapOf<Ordering<*>, JooqQueryComponents.Sorter>()
