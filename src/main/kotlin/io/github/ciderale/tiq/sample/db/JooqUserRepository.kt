@@ -8,7 +8,6 @@ import io.github.ciderale.tiq.core.jooq.fetch
 import io.github.ciderale.tiq.sample.UserRepository
 import io.github.ciderale.tiq.sample.domain.UserDetail
 import io.github.ciderale.tiq.sample.domain.UserSummary
-import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
 
@@ -16,7 +15,12 @@ class JooqUserRepository(
     private val ctx: DSLContext,
 ) : UserRepository {
     init {
-        JooqQueryTranslatorImpl.addQuery<UserRepository.Query>({ it.toCondition() })
+        JooqQueryTranslatorImpl.addQuery<UserRepository.Query> {
+            DSL.and(
+                it.id?.let(USER.ID::eq),
+                it.activeOnly?.let(USER.ACTIVE::eq),
+            )
+        }
         JooqQueryTranslatorImpl.addProjection(
             UserRepository.Summary,
             { ctx -> ctx.select(USER.ID, USER.NAME).from(USER) },
@@ -36,9 +40,3 @@ class JooqUserRepository(
         projection: UserRepository.UP<T>,
     ): R = ctx.fetch(QuerySpec(query, projection, mode), JooqQueryTranslatorImpl)
 }
-
-fun UserRepository.Query.toCondition(): Condition =
-    DSL.and(
-        id?.let(USER.ID::eq),
-        activeOnly?.let(USER.ACTIVE::eq),
-    )
