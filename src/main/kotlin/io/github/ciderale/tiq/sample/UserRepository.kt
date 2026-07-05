@@ -1,6 +1,7 @@
 package io.github.ciderale.tiq.sample
 
 import io.github.ciderale.tiq.core.Fetcher
+import io.github.ciderale.tiq.core.Ordering
 import io.github.ciderale.tiq.core.Projection
 import io.github.ciderale.tiq.sample.domain.UserDetail
 import io.github.ciderale.tiq.sample.domain.UserSummary
@@ -10,6 +11,11 @@ interface UserRepository {
         val id: String? = null,
         val activeOnly: Boolean? = null,
     )
+
+    enum class OrderBy : Ordering<Query> {
+        ID,
+        NAME,
+    }
 
     // Projections belong to this Query scope
     sealed interface UP<T> : Projection<Query, T>
