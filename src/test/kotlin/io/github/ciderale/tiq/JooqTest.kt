@@ -7,28 +7,36 @@ import io.github.ciderale.tiq.sample.UserRepository
 import io.github.ciderale.tiq.sample.db.JooqUserRepository
 import io.github.ciderale.tiq.sample.domain.UserDetail
 import io.github.ciderale.tiq.sample.domain.UserSummary
-import org.jooq.DSLContext
 import org.jooq.SQLDialect
 import org.jooq.impl.DSL
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.sql.Connection
 import java.sql.DriverManager
 import kotlin.test.assertEquals
 
 class JooqTest {
-    private fun dsl(): DSLContext {
-        val conn =
+    lateinit var connection: Connection
+
+    @BeforeEach
+    fun setup() {
+        connection =
             DriverManager.getConnection(
                 "jdbc:postgresql://localhost:5432/appdb",
                 "app",
                 "app",
             )
+    }
 
-        return DSL.using(conn, SQLDialect.POSTGRES)
+    @AfterEach
+    fun teardown() {
+        connection.close()
     }
 
     @Test
     fun testSelectUsers() {
-        val ctx = dsl()
+        val ctx = DSL.using(connection, SQLDialect.POSTGRES)
         val repo = JooqUserRepository(ctx)
 
         val id = "1"
