@@ -5,6 +5,7 @@ import io.github.ciderale.tiq.core.PagedList
 import io.github.ciderale.tiq.core.jooq.JooqQueryComponents
 import org.jooq.DSLContext
 import org.jooq.Record
+import org.jooq.RecordMapper
 import org.jooq.SelectQuery
 
 fun JooqQueryTranslatorImpl.addClassicFetcher() {
@@ -18,7 +19,7 @@ class FetchCount<T> : JooqQueryComponents.Fetcher<Record, T, Int> {
     override fun invoke(
         ctx: DSLContext,
         sqlQuery: SelectQuery<Record>,
-        mapper: (Record) -> T,
+        mapper: RecordMapper<Record, T>,
     ): Int = ctx.fetchCount(sqlQuery)
 }
 
@@ -26,7 +27,7 @@ class FetchOne<T> : JooqQueryComponents.Fetcher<Record, T, T> {
     override fun invoke(
         ctx: DSLContext,
         sqlQuery: SelectQuery<Record>,
-        mapper: (Record) -> T,
+        mapper: RecordMapper<Record, T>,
     ): T = sqlQuery.fetchSingle(mapper)
 }
 
@@ -34,7 +35,7 @@ class FetchMany<T> : JooqQueryComponents.Fetcher<Record, T, List<T>> {
     override fun invoke(
         ctx: DSLContext,
         sqlQuery: SelectQuery<Record>,
-        mapper: (Record) -> T,
+        mapper: RecordMapper<Record, T>,
     ): List<T> = sqlQuery.fetch(mapper)
 }
 
@@ -44,7 +45,7 @@ class FetchPaged<T>(
     override fun invoke(
         ctx: DSLContext,
         sqlQuery: SelectQuery<Record>,
-        mapper: (Record) -> T,
+        mapper: RecordMapper<Record, T>,
     ): PagedList<T> {
         val total = ctx.fetchCount(sqlQuery)
         val items =

@@ -13,6 +13,7 @@ import io.github.ciderale.tiq.sample.UserRepository
 import io.github.ciderale.tiq.sample.domain.UserDetail
 import io.github.ciderale.tiq.sample.domain.UserSummary
 import org.jooq.DSLContext
+import org.jooq.Records.mapping
 import org.jooq.impl.DSL
 
 class JooqUserRepository(
@@ -30,12 +31,12 @@ class JooqUserRepository(
         JooqQueryTranslatorImpl.addProjection(
             UserRepository.Summary,
             { ctx -> ctx.select(USER.ID, USER.NAME).from(USER) },
-            { UserSummary(it[USER.ID], it[USER.NAME]) },
+            mapping(::UserSummary),
         )
         JooqQueryTranslatorImpl.addProjection(
             UserRepository.Detail,
             { ctx -> ctx.select(USER.ID, USER.NAME, USER.EMAIL).from(USER) },
-            { UserDetail(id = it[USER.ID]!!, name = it[USER.NAME]!!, email = it[USER.EMAIL]!!) },
+            mapping(::UserDetail),
         )
         JooqQueryTranslatorImpl.addClassicFetcher()
     }

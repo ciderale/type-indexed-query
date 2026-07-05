@@ -5,6 +5,7 @@ import io.github.ciderale.tiq.core.QuerySpec
 import org.jooq.Condition
 import org.jooq.DSLContext
 import org.jooq.Record
+import org.jooq.RecordMapper
 import org.jooq.SelectJoinStep
 import org.jooq.SelectQuery
 import org.jooq.SortField
@@ -23,8 +24,8 @@ data class JooqQueryComponents<X : Record, T, R>(
 ) {
     typealias Selector<X> = (DSLContext) -> SelectJoinStep<X>
     typealias SortFieldFactory = (OrderingDirection) -> SortField<*>
-    typealias Mapper<X, T> = (X) -> T
-    typealias Fetcher<X, T, R> = (DSLContext, SelectQuery<X>, (X) -> T) -> R
+    typealias Mapper<X, T> = RecordMapper<X, T>
+    typealias Fetcher<X, T, R> = (DSLContext, SelectQuery<X>, RecordMapper<X, T>) -> R
 
     fun execute(ctx: DSLContext): R {
         val ordering = ordering.map { it(direction) }
