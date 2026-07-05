@@ -1,6 +1,5 @@
 package io.github.ciderale.tiq.core.jooq
 
-import io.github.ciderale.tiq.core.OrderingDirection
 import io.github.ciderale.tiq.core.QuerySpec
 import org.jooq.Condition
 import org.jooq.DSLContext
@@ -17,18 +16,16 @@ interface JooqQueryTranslator {
 data class JooqQueryComponents<X : Record, T, R>(
     val condition: Condition,
     val select: Selector<X>,
-    val ordering: List<SortFieldFactory>,
-    val direction: OrderingDirection,
+    val ordering: Ordering,
     val mapper: Mapper<X, T>,
     val fetch: Fetcher<X, T, R>,
 ) {
     typealias Selector<X> = (DSLContext) -> SelectJoinStep<X>
-    typealias SortFieldFactory = (OrderingDirection) -> SortField<*>
+    typealias Ordering = List<SortField<*>>
     typealias Mapper<X, T> = RecordMapper<X, T>
     typealias Fetcher<X, T, R> = (DSLContext, SelectQuery<X>, RecordMapper<X, T>) -> R
 
     fun execute(ctx: DSLContext): R {
-        val ordering = ordering.map { it(direction) }
         val sqlQuery = select(ctx).where(condition).orderBy(ordering)
         return fetch(ctx, sqlQuery.query, mapper)
     }

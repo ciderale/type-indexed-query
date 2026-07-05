@@ -2,10 +2,12 @@ package io.github.ciderale.tiq.core.jooq
 
 import io.github.ciderale.tiq.core.Fetcher
 import io.github.ciderale.tiq.core.Ordering
+import io.github.ciderale.tiq.core.OrderingDirection
 import io.github.ciderale.tiq.core.Projection
 import io.github.ciderale.tiq.core.QuerySpec
 import org.jooq.Condition
 import org.jooq.Record
+import org.jooq.SortField
 import kotlin.reflect.KClass
 
 object JooqQueryTranslatorImpl : JooqQueryTranslator {
@@ -14,8 +16,7 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
         return JooqQueryComponents<Record, T, R>(
             makeCondition(spec.query),
             select = selector,
-            ordering = makeOrdering(spec.ordering),
-            direction = spec.direction,
+            ordering = makeOrdering(spec.ordering, spec.direction),
             mapper = mapper,
             fetch = makeFetcher(spec.fetcher),
         )
@@ -40,18 +41,24 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
     private fun <Q> makeCondition(query: Q): Condition = checkCast<ConditionFactory<Q>>(conditionFactoryRegistry, query!!::class)(query)
 
     // ################### Ordering/Sorting ########################################
-    typealias OrderingFactory = List<JooqQueryComponents.SortFieldFactory>
+    typealias OrderingFactory = (OrderingDirection) -> JooqQueryComponents.Ordering
+    typealias SortFieldFactory = (OrderingDirection) -> SortField<*>
 
     val orderingRegistry = mutableMapOf<Ordering<*>, OrderingFactory>()
 
-    private fun <Q> makeOrdering(ordering: Ordering<Q>?): OrderingFactory =
-        ordering?.let { checkCast(orderingRegistry, ordering) } ?: listOf()
+    private fun <Q> makeOrdering(
+        ordering: Ordering<Q>?,
+        direction: OrderingDirection,
+    ): List<SortField<*>> =
+        ordering?.let {
+            checkCast<OrderingFactory>(orderingRegistry, ordering)(direction)
+        } ?: listOf()
 
     fun <Q> addOrdering(
         ordering: Ordering<Q>,
-        vararg sorter: JooqQueryComponents.SortFieldFactory,
+        vararg sorter: SortFieldFactory,
     ) {
-        orderingRegistry[ordering] = sorter.toList()
+        orderingRegistry[ordering] = { direction -> sorter.map { it(direction) } }
     }
 
     // ################### SelectMapping #########################################
