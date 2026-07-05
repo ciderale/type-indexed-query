@@ -34,12 +34,7 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
     private fun <Q, T> makeMapper(projection: Projection<Q, T>): JooqQueryComponents.Mapper<Record, T> =
         checkCast<JooqQueryComponents.Mapper<Record, T>>(mapMapper, projection)
 
-    private fun <T, R> makeFetcher(fetcher: Fetcher<T, R>): JooqQueryComponents.Fetcher<Record, T, R> {
-        val factory =
-            checkCast<(Fetcher<T, R>) -> JooqQueryComponents.Fetcher<Record, T, R>>(mapFetcher, fetcher::class)
-        return factory(fetcher)
-    }
-
+    @Suppress("UNCHECKED_CAST")
     private fun <T : Any> checkCast(
         map: MutableMap<*, *>,
         key: Any,
@@ -49,7 +44,6 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
     val mapSelect = mutableMapOf<Projection<*, *>, JooqQueryComponents.Selector<*>>()
     val mapMapper = mutableMapOf<Projection<*, *>, JooqQueryComponents.Mapper<*, *>>()
     val mapSorter = mutableMapOf<Ordering<*>, JooqQueryComponents.Sorter>()
-    val mapFetcher = mutableMapOf<KClass<*>, (Any) -> JooqQueryComponents.Fetcher<*, *, *>>()
 
     // ---------------- populating the lookup table  ------------------------
     inline fun <reified Q : Any> addQuery(noinline toCondition: (Q) -> Condition) {
@@ -72,7 +66,17 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
         mapMapper[projection] = mapper
     }
 
-    inline fun <T, R, reified M : Fetcher<T, R>> addFetcher(noinline fetcher: (M) -> JooqQueryComponents.Fetcher<Record, T, R>) {
-        mapFetcher[M::class] = fetcher as (Any) -> JooqQueryComponents.Fetcher<*, *, *>
+    // typealias to make the lookup consistency more explicit
+    typealias FetcherFactory<T, R, M> = (M) -> JooqQueryComponents.Fetcher<Record, T, R>
+    typealias FetcherFactoryErased = FetcherFactory<*, *, *>
+
+    val mapFetcher = mutableMapOf<KClass<*>, FetcherFactoryErased>()
+
+    inline fun <T, R, reified M : Fetcher<T, R>> addFetcher(noinline fetcher: FetcherFactory<T, R, M>) {
+        @Suppress("UNCHECKED_CAST") // addFetcher type signature verifies consistency
+        mapFetcher[M::class] = fetcher as FetcherFactoryErased
     }
+
+    private fun <T, R> makeFetcher(fetcher: Fetcher<T, R>): JooqQueryComponents.Fetcher<Record, T, R> =
+        checkCast<FetcherFactory<T, R, Fetcher<T, R>>>(mapFetcher, fetcher::class)(fetcher)
 }
