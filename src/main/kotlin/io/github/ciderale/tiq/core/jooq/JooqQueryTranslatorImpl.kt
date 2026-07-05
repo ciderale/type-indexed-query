@@ -9,30 +9,17 @@ import org.jooq.Record
 import kotlin.reflect.KClass
 
 object JooqQueryTranslatorImpl : JooqQueryTranslator {
-    override fun <Q, T, R> translate(spec: QuerySpec<Q, T, R>): JooqQueryComponents<Record, T, R> =
-        JooqQueryComponents<Record, T, R>(
+    override fun <Q, T, R> translate(spec: QuerySpec<Q, T, R>): JooqQueryComponents<Record, T, R> {
+        val (selector, mapper) = makeSelectMappingPair(spec.projection)
+        return JooqQueryComponents<Record, T, R>(
             makeCondition(spec.query),
-            select = makeSelect(spec.projection),
+            select = selector,
             sorter = makeSorter(spec.ordering),
             direction = spec.direction,
-            mapper = makeMapper(spec.projection),
+            mapper = mapper,
             fetch = makeFetcher(spec.fetcher),
         )
-
-    private fun <Q> makeCondition(query: Q): Condition = checkCast<(Q) -> Condition>(mapCondition, query!!::class)(query)
-
-    private fun <Q, T> makeSelect(projection: Projection<Q, T>): JooqQueryComponents.Selector<Record> =
-        checkCast<JooqQueryComponents.Selector<Record>>(mapSelect, projection)
-
-    private fun <Q> makeSorter(ordering: Ordering<Q>?): JooqQueryComponents.Sorter =
-        if (ordering == null) {
-            listOf()
-        } else {
-            checkCast(mapSorter, ordering)
-        }
-
-    private fun <Q, T> makeMapper(projection: Projection<Q, T>): JooqQueryComponents.Mapper<Record, T> =
-        checkCast<JooqQueryComponents.Mapper<Record, T>>(mapMapper, projection)
+    }
 
     @Suppress("UNCHECKED_CAST")
     private fun <T : Any> checkCast(
@@ -40,15 +27,22 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
         key: Any,
     ): T = checkNotNull(map[key]) { "Missing definition for $key" } as T
 
-    val mapCondition = mutableMapOf<KClass<*>, (Any) -> Condition>()
-    val mapSelect = mutableMapOf<Projection<*, *>, JooqQueryComponents.Selector<*>>()
-    val mapMapper = mutableMapOf<Projection<*, *>, JooqQueryComponents.Mapper<*, *>>()
-    val mapSorter = mutableMapOf<Ordering<*>, JooqQueryComponents.Sorter>()
+    // ################### Query => Condition ########################################
+    typealias ConditionFactory<Q> = (Q) -> Condition
 
-    // ---------------- populating the lookup table  ------------------------
-    inline fun <reified Q : Any> addQuery(noinline toCondition: (Q) -> Condition) {
+    val mapCondition = mutableMapOf<KClass<*>, ConditionFactory<*>>()
+
+    inline fun <reified Q : Any> addQuery(noinline toCondition: ConditionFactory<Q>) {
         mapCondition[Q::class] = { toCondition(it as Q) }
     }
+
+    private fun <Q> makeCondition(query: Q): Condition = checkCast<(Q) -> Condition>(mapCondition, query!!::class)(query)
+
+    // ################### Ordering/Sorting ########################################
+    val mapSorter = mutableMapOf<Ordering<*>, JooqQueryComponents.Sorter>()
+
+    private fun <Q> makeSorter(ordering: Ordering<Q>?): JooqQueryComponents.Sorter =
+        ordering?.let { checkCast(mapSorter, ordering) } ?: listOf()
 
     fun <Q> addOrdering(
         ordering: Ordering<Q>,
@@ -57,15 +51,27 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
         mapSorter[ordering] = sorter.toList()
     }
 
+    // ################### SelectMapping #########################################
+
+    data class SelectMappingPair<X : Record, T>(
+        val selector: JooqQueryComponents.Selector<X>,
+        val mapper: JooqQueryComponents.Mapper<X, T>,
+    )
+
+    val mapSelectMapping = mutableMapOf<Projection<*, *>, SelectMappingPair<*, *>>()
+
     fun <Q, T, X : Record> addProjection(
         projection: Projection<Q, T>,
         selector: JooqQueryComponents.Selector<X>,
         mapper: JooqQueryComponents.Mapper<X, T>,
     ) {
-        mapSelect[projection] = selector
-        mapMapper[projection] = mapper
+        mapSelectMapping[projection] = SelectMappingPair(selector, mapper)
     }
 
+    private fun <Q, T> makeSelectMappingPair(projection: Projection<Q, T>) =
+        checkCast<SelectMappingPair<Record, T>>(mapSelectMapping, projection)
+
+    // ################### Fetcher ###########################################################
     // typealias to make the lookup consistency more explicit
     typealias FetcherFactory<T, R, M> = (M) -> JooqQueryComponents.Fetcher<Record, T, R>
     typealias FetcherFactoryErased = FetcherFactory<*, *, *>
