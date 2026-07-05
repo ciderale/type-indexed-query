@@ -39,7 +39,7 @@ class FetchMany<T> : JooqQueryComponents.Fetcher<Record, T, List<T>> {
 }
 
 class FetchPaged<T>(
-    val mode: ClassicFetcher.Paged<T>,
+    val fetcher: ClassicFetcher.Paged<T>,
 ) : JooqQueryComponents.Fetcher<Record, T, PagedList<T>> {
     override fun invoke(
         ctx: DSLContext,
@@ -49,10 +49,10 @@ class FetchPaged<T>(
         val total = ctx.fetchCount(sqlQuery)
         val items =
             sqlQuery
-                .offset(mode.offset)
-                .limit(mode.limit)
+                .offset(fetcher.offset)
+                .limit(fetcher.limit)
                 .fetch(mapper)
 
-        return PagedList(items, offset = mode.offset, total = total)
+        return PagedList(items, offset = fetcher.offset, total = total)
     }
 }

@@ -34,8 +34,8 @@ class JooqTest {
             repo
                 .fetch(
                     UserRepository.Query(id = "1"),
-                    ClassicFetcher.One(),
                     UserRepository.Summary,
+                    ClassicFetcher.One(),
                 ).also(::println)
         assertEquals("1", oneUser.id)
 
@@ -43,16 +43,16 @@ class JooqTest {
             repo
                 .fetch(
                     UserRepository.Query(),
-                    ClassicFetcher.Many(),
                     UserRepository.Detail,
+                    ClassicFetcher.Many(),
                 ).also(::println)
 
         val pagedDetails: PagedList<UserDetail> =
             repo
                 .fetch(
                     UserRepository.Query(),
-                    ClassicFetcher.Paged(1, 1),
                     UserRepository.Detail,
+                    ClassicFetcher.Paged(1, 1),
                 ).also(::println)
         assertEquals(3, pagedDetails.total)
 
@@ -60,8 +60,8 @@ class JooqTest {
             repo
                 .fetch(
                     UserRepository.Query(activeOnly = true),
-                    ClassicFetcher.Count(),
                     UserRepository.Summary,
+                    ClassicFetcher.Count(),
                 ).also(::println)
     }
 }

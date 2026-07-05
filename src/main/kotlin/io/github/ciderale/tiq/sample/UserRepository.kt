@@ -20,7 +20,7 @@ interface UserRepository {
 
     fun <T, R> fetch(
         query: Query,
-        mode: Fetcher<T, R>,
         projection: UP<T>,
+        fetcher: Fetcher<T, R>,
     ): R
 }

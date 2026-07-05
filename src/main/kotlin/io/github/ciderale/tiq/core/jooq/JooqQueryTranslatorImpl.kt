@@ -13,7 +13,7 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
             makeCondition(spec.query),
             select = makeSelect(spec.projection),
             mapper = makeMapper(spec.projection),
-            fetch = makeFetcher(spec.mode),
+            fetch = makeFetcher(spec.fetcher),
         )
 
     val mapCondition = mutableMapOf<KClass<*>, (Any) -> Condition>()
@@ -54,10 +54,10 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
         mapFetcher[M::class] = fetcher as (Any) -> JooqQueryComponents.Fetcher<*, *, *>
     }
 
-    private fun <T, R> makeFetcher(mode: Fetcher<T, R>): JooqQueryComponents.Fetcher<Record, T, R> {
+    private fun <T, R> makeFetcher(fetcher: Fetcher<T, R>): JooqQueryComponents.Fetcher<Record, T, R> {
         val factory =
-            checkNotNull(mapFetcher[mode::class], { "Missing Fetcher for $mode" })
+            checkNotNull(mapFetcher[fetcher::class], { "Missing Fetcher for $fetcher" })
                 as (Fetcher<T, R>) -> JooqQueryComponents.Fetcher<Record, T, R>
-        return factory(mode)
+        return factory(fetcher)
     }
 }

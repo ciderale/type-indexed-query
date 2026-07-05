@@ -7,5 +7,5 @@ interface Fetcher<T, R>
 data class QuerySpec<Q, T, R>(
     val query: Q,
     val projection: Projection<Q, T>,
-    val mode: Fetcher<T, R>,
+    val fetcher: Fetcher<T, R>,
 )

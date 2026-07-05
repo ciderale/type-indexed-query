@@ -36,7 +36,7 @@ class JooqUserRepository(
 
     override fun <T, R> fetch(
         query: UserRepository.Query,
-        mode: Fetcher<T, R>,
         projection: UserRepository.UP<T>,
-    ): R = ctx.fetch(QuerySpec(query, projection, mode), JooqQueryTranslatorImpl)
+        fetcher: Fetcher<T, R>,
+    ): R = ctx.fetch(QuerySpec(query, projection, fetcher), JooqQueryTranslatorImpl)
 }

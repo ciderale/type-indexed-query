@@ -14,6 +14,6 @@ interface OrderRepository {
     fun <T, R> fetch(
         query: Query,
         projection: Summary,
-        mode: Fetcher<T, R>,
+        fetcher: Fetcher<T, R>,
     ): R
 }
