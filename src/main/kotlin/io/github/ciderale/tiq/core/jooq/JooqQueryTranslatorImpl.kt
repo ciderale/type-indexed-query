@@ -46,15 +46,15 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
     // ################### Ordering/Sorting ########################################
     typealias SortFieldFactory = (OrderingDirection) -> SortField<*>
 
-    val orderingRegistry = mutableMapOf<Ordering<*>, List<SortFieldFactory>>()
+    val orderingRegistry = mutableMapOf<KClass<out Ordering<*>>, List<SortFieldFactory>>()
 
-    private fun <Q> makeOrdering(ordering: Ordering<Q>): List<SortFieldFactory> = checkCast(orderingRegistry, ordering)
+    private fun <Q> makeOrdering(ordering: Ordering<Q>): List<SortFieldFactory> = checkCast(orderingRegistry, ordering::class)
 
     fun <Q> addOrdering(
         ordering: Ordering<Q>,
         vararg sorter: SortFieldFactory,
     ) {
-        orderingRegistry[ordering] = sorter.toList()
+        orderingRegistry[ordering::class] = sorter.toList()
     }
 
     // ################### SelectMapping #########################################
@@ -64,25 +64,25 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
         val mapper: JooqQueryComponents.Mapper<X, T>,
     )
 
-    val mapSelectMapping = mutableMapOf<Projection<*, *>, SelectMappingPair<*, *>>()
+    val mapSelectMapping = mutableMapOf<KClass<out Projection<*, *>>, SelectMappingPair<*, *>>()
 
     fun <Q, T, X : Record> addProjection(
         projection: Projection<Q, T>,
         selector: JooqQueryComponents.Selector<X>,
         mapper: JooqQueryComponents.Mapper<X, T>,
     ) {
-        mapSelectMapping[projection] = SelectMappingPair(selector, mapper)
+        mapSelectMapping[projection::class] = SelectMappingPair(selector, mapper)
     }
 
     private fun <Q, T> makeSelectMappingPair(projection: Projection<Q, T>) =
-        checkCast<SelectMappingPair<Record, T>>(mapSelectMapping, projection)
+        checkCast<SelectMappingPair<Record, T>>(mapSelectMapping, projection::class)
 
     // ################### Fetcher ###########################################################
     // typealias to make the lookup consistency more explicit
     typealias FetcherFactory<T, R, M> = (M) -> JooqQueryComponents.Fetcher<Record, T, R>
     typealias FetcherFactoryErased = FetcherFactory<*, *, *>
 
-    val mapFetcher = mutableMapOf<KClass<*>, FetcherFactoryErased>()
+    val mapFetcher = mutableMapOf<KClass<out Fetcher<*, *>>, FetcherFactoryErased>()
 
     inline fun <T, R, reified M : Fetcher<T, R>> addFetcher(noinline fetcher: FetcherFactory<T, R, M>) {
         @Suppress("UNCHECKED_CAST") // addFetcher type signature verifies consistency
