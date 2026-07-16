@@ -9,13 +9,13 @@ import org.jooq.SelectJoinStep
 import org.jooq.SelectQuery
 import org.jooq.SortField
 
-fun <Q, T, R> DSLContext.fetch(
+fun <Q : Any, T, R> DSLContext.fetch(
     spec: QuerySpec<Q, T, R>,
     translator: JooqQueryTranslator,
 ) = translator.translate(spec).execute(this)
 
 interface JooqQueryTranslator {
-    fun <Q, T, R> translate(spec: QuerySpec<Q, T, R>): JooqQueryComponents<*, T, R>
+    fun <Q : Any, T, R> translate(spec: QuerySpec<Q, T, R>): JooqQueryComponents<*, T, R>
 }
 
 data class JooqQueryComponents<X : Record, T, R>(

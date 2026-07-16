@@ -14,7 +14,7 @@ import org.jooq.SortField
  * and is responsible to ensure the type-index consistencies of Q, T, R.
  */
 object JooqQueryTranslatorImpl : JooqQueryTranslator {
-    override fun <Q, T, R> translate(spec: QuerySpec<Q, T, R>): JooqQueryComponents<Record, T, R> {
+    override fun <Q : Any, T, R> translate(spec: QuerySpec<Q, T, R>): JooqQueryComponents<Record, T, R> {
         val (selector, mapper) = makeSelectMappingPair(spec.projection)
         return JooqQueryComponents<Record, T, R>(
             makeCondition(spec.query),
@@ -35,7 +35,7 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
         conditionRegistry.add(factory)
     }
 
-    private fun <Q> makeCondition(query: Q): Condition = conditionRegistry.make(query!!)
+    private fun <Q : Any> makeCondition(query: Q): Condition = conditionRegistry.make(query)
 
     // ################### Ordering<Q> => List<SortFieldFactory> ########################################
     typealias SortFieldFactory = (OrderingDirection) -> SortField<*>

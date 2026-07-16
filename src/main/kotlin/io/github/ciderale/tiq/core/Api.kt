@@ -8,7 +8,7 @@ enum class OrderingDirection { ASC, DESC }
 
 interface Fetcher<T, R>
 
-data class QuerySpec<Q, T, R>(
+data class QuerySpec<Q : Any, T, R>(
     val query: Q,
     val ordering: Ordering<Q>?,
     val direction: OrderingDirection = OrderingDirection.ASC,
