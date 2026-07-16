@@ -42,11 +42,11 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
 
     val orderingRegistry = TypeIndexedFactoryRegistry<Ordering<*>>()
 
-    inline fun <Q, reified O : Ordering<Q>> addOrdering(
-        ordering: O,
+    fun <Q> addOrdering(
+        ordering: Ordering<Q>,
         vararg sorter: SortFieldFactory,
     ) {
-        orderingRegistry.add<O, List<SortFieldFactory>> { sorter.toList() }
+        orderingRegistry.add(ordering, sorter.toList())
     }
 
     private fun <Q> makeOrdering(ordering: Ordering<Q>): List<SortFieldFactory> = orderingRegistry.make(ordering)
@@ -59,12 +59,12 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
 
     val selectMappingRegistry = TypeIndexedFactoryRegistry<Projection<*, *>>()
 
-    inline fun <Q, T, X : Record, reified P : Projection<Q, T>> addProjection(
-        projection: P,
-        noinline selector: JooqQueryComponents.Selector<X>,
+    fun <Q, T, X : Record> addProjection(
+        projection: Projection<Q, T>,
+        selector: JooqQueryComponents.Selector<X>,
         mapper: JooqQueryComponents.Mapper<X, T>,
     ) {
-        selectMappingRegistry.add<P, SelectMappingPair<X, T>> { SelectMappingPair(selector, mapper) }
+        selectMappingRegistry.add(projection, SelectMappingPair(selector, mapper))
     }
 
     private fun <Q, T> makeSelectMappingPair(projection: Projection<Q, T>): SelectMappingPair<Record, T> =

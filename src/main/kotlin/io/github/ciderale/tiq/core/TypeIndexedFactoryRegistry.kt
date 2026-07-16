@@ -23,10 +23,20 @@ import kotlin.reflect.KClass
 class TypeIndexedFactoryRegistry<M : Any> {
     val map: MutableMap<KClass<out M>, (M) -> Any> = mutableMapOf()
 
-    inline fun <reified MR : M, T> add(noinline factory: (MR) -> T) {
+    fun <MR : M, T> add(
+        clazz: KClass<out MR>,
+        factory: (MR) -> T,
+    ) {
         @Suppress("UNCHECKED_CAST")
-        map[MR::class] = factory as (M) -> Any
+        map[clazz] = factory as (M) -> Any
     }
+
+    fun <T> add(
+        spec: M,
+        value: T,
+    ) = add(spec::class) { value }
+
+    inline fun <reified MR : M, T> add(noinline factory: (MR) -> T) = add(MR::class, factory)
 
     fun <T> make(spec: M): T = checkCast<(M) -> T>(spec::class)(spec)
 
