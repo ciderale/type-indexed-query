@@ -16,7 +16,7 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
         return JooqQueryComponents<Record, T, R>(
             makeCondition(spec.query),
             select = selector,
-            ordering = makeOrdering(spec.ordering, spec.direction),
+            ordering = makeOrdering(spec.ordering).map { sortField -> sortField(spec.direction) },
             mapper = mapper,
             fetch = makeFetcher(spec.fetcher),
         )
@@ -41,24 +41,18 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
     private fun <Q> makeCondition(query: Q): Condition = checkCast<ConditionFactory<Q>>(conditionFactoryRegistry, query!!::class)(query)
 
     // ################### Ordering/Sorting ########################################
-    typealias OrderingFactory = (OrderingDirection) -> JooqQueryComponents.Ordering
     typealias SortFieldFactory = (OrderingDirection) -> SortField<*>
 
-    val orderingRegistry = mutableMapOf<Ordering<*>, OrderingFactory>()
+    val orderingRegistry = mutableMapOf<Ordering<*>, List<SortFieldFactory>>()
 
-    private fun <Q> makeOrdering(
-        ordering: Ordering<Q>?,
-        direction: OrderingDirection,
-    ): List<SortField<*>> =
-        ordering?.let {
-            checkCast<OrderingFactory>(orderingRegistry, ordering)(direction)
-        } ?: listOf()
+    private fun <Q> makeOrdering(ordering: Ordering<Q>?): List<SortFieldFactory> =
+        ordering?.let { checkCast(orderingRegistry, ordering) } ?: listOf()
 
     fun <Q> addOrdering(
         ordering: Ordering<Q>,
         vararg sorter: SortFieldFactory,
     ) {
-        orderingRegistry[ordering] = { direction -> sorter.map { it(direction) } }
+        orderingRegistry[ordering] = sorter.toList()
     }
 
     // ################### SelectMapping #########################################
