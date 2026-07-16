@@ -9,10 +9,19 @@ import org.jooq.RecordMapper
 import org.jooq.SelectQuery
 
 fun JooqQueryTranslatorImpl.addClassicFetcher() {
+    JooqQueryTranslatorImpl.addFetcher<Any, Boolean, ClassicFetcher.Exists<Any>> { FetchExists() }
     JooqQueryTranslatorImpl.addFetcher<Any, Int, ClassicFetcher.Count<Any>> { FetchCount() }
     JooqQueryTranslatorImpl.addFetcher<Any, Any, ClassicFetcher.One<Any>> { FetchOne() }
     JooqQueryTranslatorImpl.addFetcher<Any, List<Any>, ClassicFetcher.Many<Any>> { FetchMany() }
     JooqQueryTranslatorImpl.addFetcher<Any, PagedList<Any>, ClassicFetcher.Paged<Any>>(::FetchPaged)
+}
+
+class FetchExists<T> : JooqQueryComponents.Fetcher<Record, T, Boolean> {
+    override fun invoke(
+        ctx: DSLContext,
+        sqlQuery: SelectQuery<Record>,
+        mapper: RecordMapper<Record, T>,
+    ): Boolean = ctx.fetchExists(sqlQuery)
 }
 
 class FetchCount<T> : JooqQueryComponents.Fetcher<Record, T, Int> {

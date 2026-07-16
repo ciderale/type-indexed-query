@@ -89,5 +89,22 @@ class JooqTest {
                     ClassicFetcher.Many(),
                 )
         assertEquals(countActive, activeUser.size)
+
+        val exists: Boolean =
+            repo
+                .fetch(
+                    UserRepository.Query(activeOnly = true),
+                    UserRepository.Summary,
+                    ClassicFetcher.Exists(),
+                )
+        assertEquals(true, exists)
+        val notExists: Boolean =
+            repo
+                .fetch(
+                    UserRepository.Query(id = "inexistent-id"),
+                    UserRepository.Summary,
+                    ClassicFetcher.Exists(),
+                )
+        assertEquals(false, notExists)
     }
 }

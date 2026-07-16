@@ -8,6 +8,8 @@ data class PagedList<T>(
 
 // This is important to dependently determine the return type
 sealed interface ClassicFetcher<T, R> : Fetcher<T, R> {
+    class Exists<T> : Fetcher<T, Boolean>
+
     class Count<T> : Fetcher<T, Int>
 
     class One<T> : Fetcher<T, T>
