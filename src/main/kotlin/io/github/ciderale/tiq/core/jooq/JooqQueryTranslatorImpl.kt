@@ -10,6 +10,9 @@ import org.jooq.Condition
 import org.jooq.Record
 import org.jooq.SortField
 
+/** JooqQueryTranslatorImpl translates a QuerySpec to concrete JooqQueryComponents
+ * and is responsible to ensure the type-index consistencies of Q, T, R.
+ */
 object JooqQueryTranslatorImpl : JooqQueryTranslator {
     override fun <Q, T, R> translate(spec: QuerySpec<Q, T, R>): JooqQueryComponents<Record, T, R> {
         val (selector, mapper) = makeSelectMappingPair(spec.projection)
