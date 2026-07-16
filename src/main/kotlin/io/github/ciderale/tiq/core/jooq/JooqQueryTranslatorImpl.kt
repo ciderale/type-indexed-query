@@ -5,10 +5,10 @@ import io.github.ciderale.tiq.core.Ordering
 import io.github.ciderale.tiq.core.OrderingDirection
 import io.github.ciderale.tiq.core.Projection
 import io.github.ciderale.tiq.core.QuerySpec
+import io.github.ciderale.tiq.core.TypeIndexedFactoryRegistry
 import org.jooq.Condition
 import org.jooq.Record
 import org.jooq.SortField
-import kotlin.reflect.KClass
 
 object JooqQueryTranslatorImpl : JooqQueryTranslator {
     override fun <Q, T, R> translate(spec: QuerySpec<Q, T, R>): JooqQueryComponents<Record, T, R> {
@@ -25,70 +25,54 @@ object JooqQueryTranslatorImpl : JooqQueryTranslator {
         )
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun <T : Any> checkCast(
-        map: MutableMap<*, *>,
-        key: Any,
-    ): T = checkNotNull(map[key]) { "Missing definition for $key" } as T
-
     // ################### Query => Condition ########################################
-    typealias ConditionFactory<Q> = (Q) -> Condition
-    typealias ConditionFactoryErased = ConditionFactory<*>
+    val conditionRegistry = TypeIndexedFactoryRegistry<Any>()
 
-    val conditionFactoryRegistry = mutableMapOf<KClass<*>, ConditionFactoryErased>()
-
-    inline fun <reified Q : Any> addQuery(noinline toCondition: ConditionFactory<Q>) {
-        conditionFactoryRegistry[Q::class] = toCondition
+    inline fun <reified Q : Any> addQuery(noinline factory: (Q) -> Condition) {
+        conditionRegistry.add(factory)
     }
 
-    private fun <Q> makeCondition(query: Q): Condition = checkCast<ConditionFactory<Q>>(conditionFactoryRegistry, query!!::class)(query)
+    private fun <Q> makeCondition(query: Q): Condition = conditionRegistry.make(query!!)
 
-    // ################### Ordering/Sorting ########################################
+    // ################### Ordering<Q> => List<SortFieldFactory> ########################################
     typealias SortFieldFactory = (OrderingDirection) -> SortField<*>
 
-    val orderingRegistry = mutableMapOf<KClass<out Ordering<*>>, List<SortFieldFactory>>()
+    val orderingRegistry = TypeIndexedFactoryRegistry<Ordering<*>>()
 
-    private fun <Q> makeOrdering(ordering: Ordering<Q>): List<SortFieldFactory> = checkCast(orderingRegistry, ordering::class)
-
-    fun <Q> addOrdering(
-        ordering: Ordering<Q>,
+    inline fun <Q, reified O : Ordering<Q>> addOrdering(
+        ordering: O,
         vararg sorter: SortFieldFactory,
     ) {
-        orderingRegistry[ordering::class] = sorter.toList()
+        orderingRegistry.add<O, List<SortFieldFactory>> { sorter.toList() }
     }
 
-    // ################### SelectMapping #########################################
+    private fun <Q> makeOrdering(ordering: Ordering<Q>): List<SortFieldFactory> = orderingRegistry.make(ordering)
 
+    // ################### Projection<Q,T> => SelectMappingPair<*,T> #########################################
     data class SelectMappingPair<X : Record, T>(
         val selector: JooqQueryComponents.Selector<X>,
         val mapper: JooqQueryComponents.Mapper<X, T>,
     )
 
-    val mapSelectMapping = mutableMapOf<KClass<out Projection<*, *>>, SelectMappingPair<*, *>>()
+    val selectMappingRegistry = TypeIndexedFactoryRegistry<Projection<*, *>>()
 
-    fun <Q, T, X : Record> addProjection(
-        projection: Projection<Q, T>,
-        selector: JooqQueryComponents.Selector<X>,
+    inline fun <Q, T, X : Record, reified P : Projection<Q, T>> addProjection(
+        projection: P,
+        noinline selector: JooqQueryComponents.Selector<X>,
         mapper: JooqQueryComponents.Mapper<X, T>,
     ) {
-        mapSelectMapping[projection::class] = SelectMappingPair(selector, mapper)
+        selectMappingRegistry.add<P, SelectMappingPair<X, T>> { SelectMappingPair(selector, mapper) }
     }
 
-    private fun <Q, T> makeSelectMappingPair(projection: Projection<Q, T>) =
-        checkCast<SelectMappingPair<Record, T>>(mapSelectMapping, projection::class)
+    private fun <Q, T> makeSelectMappingPair(projection: Projection<Q, T>): SelectMappingPair<Record, T> =
+        selectMappingRegistry.make(projection)
 
-    // ################### Fetcher ###########################################################
-    // typealias to make the lookup consistency more explicit
-    typealias FetcherFactory<T, R, M> = (M) -> JooqQueryComponents.Fetcher<Record, T, R>
-    typealias FetcherFactoryErased = FetcherFactory<*, *, *>
+    // ################### Fetcher<T,R> => JooqQueyrComponents.Fetcher<*, T,R> ##############################
+    val fetcherRegistry = TypeIndexedFactoryRegistry<Fetcher<*, *>>()
 
-    val mapFetcher = mutableMapOf<KClass<out Fetcher<*, *>>, FetcherFactoryErased>()
-
-    inline fun <T, R, reified M : Fetcher<T, R>> addFetcher(noinline fetcher: FetcherFactory<T, R, M>) {
-        @Suppress("UNCHECKED_CAST") // addFetcher type signature verifies consistency
-        mapFetcher[M::class] = fetcher as FetcherFactoryErased
+    inline fun <T, R, reified M : Fetcher<T, R>> addFetcher(noinline factory: (M) -> JooqQueryComponents.Fetcher<Record, T, R>) {
+        fetcherRegistry.add(factory)
     }
 
-    private fun <T, R, M : Fetcher<T, R>> makeFetcher(fetcher: M): JooqQueryComponents.Fetcher<Record, T, R> =
-        checkCast<FetcherFactory<T, R, M>>(mapFetcher, fetcher::class)(fetcher)
+    private fun <T, R, M : Fetcher<T, R>> makeFetcher(fetcher: M): JooqQueryComponents.Fetcher<Record, T, R> = fetcherRegistry.make(fetcher)
 }
